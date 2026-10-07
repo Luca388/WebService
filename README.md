@@ -1,6 +1,3 @@
-# CRUD Backend
-
-Spring Boot로 구현한 상품 CRUD REST API 과제입니다. 데이터베이스 대신 Java의 `Map`을 임시 저장소로 사용했습니다.
 
 ## 개발 환경
 
@@ -54,15 +51,23 @@ Spring Boot로 구현한 상품 CRUD REST API 과제입니다. 데이터베이�
 | 201 | 상품 생성 성공 |
 | 400 | 잘못된 요청 값 또는 JSON 형식 |
 | 404 | 상품을 찾을 수 없음 |
-| 500 | 서버 내부 오류 테스트 |
-| 503 | 서비스 사용 불가 테스트 |
+| 500 | 처리하지 못한 내부 예외 발생 |
+| 503 | 상품 서비스가 비활성화된 경우 |
 
-5xx 응답 확인용 API:
+`GlobalExceptionHandler`가 처리하지 못한 예외를 500으로 변환합니다. 상품 서비스 설정이 비활성화되면 `ServiceUnavailableException`이 발생하고 503으로 변환됩니다.
+
+```properties
+item.service.available=true
+```
+
+예외 처리 결과를 바로 확인할 수 있는 API:
 
 ```text
 GET /api/v1/server-status/error
 GET /api/v1/server-status/unavailable
 ```
+
+위 API도 상태 코드를 직접 반환하지 않고 내부에서 예외를 발생시키며, `GlobalExceptionHandler`가 예외를 500 또는 503 응답으로 변환합니다.
 
 ## Middleware
 
@@ -78,7 +83,7 @@ GET /api/v1/server-status/unavailable
 | 파일 | 역할 |
 |---|---|
 | `ItemController.java` | CRUD API 8개 구현 |
-| `ServerStatusController.java` | 500, 503 응답 확인 |
+| `ServerStatusController.java` | 500, 503 예외 처리 확인 |
 | `ItemController2.java` | Query Parameter 검색 예제 |
 | `ItemController3.java` | HTTP Header 처리 예제 |
 | `ItemDto.java` | 상품 데이터 구조 |
@@ -88,6 +93,7 @@ GET /api/v1/server-status/unavailable
 | `LoggingInterceptor.java` | 요청 로그 Middleware |
 | `WebConfig.java` | Interceptor 등록 |
 | `GlobalExceptionHandler.java` | 공통 오류 응답 처리 |
+| `ServiceUnavailableException.java` | 서비스 비활성화 예외 |
 
 ## 실행 및 테스트
 

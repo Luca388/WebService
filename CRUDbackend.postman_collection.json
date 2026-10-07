@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "CRUD Backend Assignment",
-    "description": "Spring Boot CRUD 과제 API 테스트 컬렉션",
+    "description": "Spring Boot CRUD 과제 API 테스트 컬렉션입니다. 기본 테스트는 ./gradlew bootRun으로 실행합니다. 실제 서비스 비활성화 503 테스트는 ./gradlew bootRun --args='--item.service.available=false'로 서버를 실행한 뒤 해당 요청을 사용합니다.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -112,28 +112,123 @@
           "raw": "{\n  \"name\": \"\",\n  \"price\": -1\n}"
         },
         "url": "{{baseUrl}}/api/v1/items"
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP 상태 코드가 400이다\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"응답이 status와 data를 포함한다\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql(400);",
+              "    pm.expect(body).to.have.property(\"data\");",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "404 - 없는 상품 조회",
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/v1/items/999"
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP 상태 코드가 404이다\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "pm.test(\"응답이 status와 data를 포함한다\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql(404);",
+              "    pm.expect(body).to.have.property(\"data\");",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "500 - 서버 내부 오류",
+      "name": "500 - 처리하지 못한 내부 예외",
       "request": {
         "method": "GET",
+        "description": "Controller에서 IllegalStateException을 발생시키고 GlobalExceptionHandler가 500 응답으로 변환하는지 확인합니다.",
         "url": "{{baseUrl}}/api/v1/server-status/error"
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP 상태 코드가 500이다\", function () {",
+              "    pm.response.to.have.status(500);",
+              "});",
+              "pm.test(\"공통 오류 응답 형식이다\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql(500);",
+              "    pm.expect(body).to.have.property(\"data\");",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "503 - 서비스 사용 불가",
+      "name": "503 - ServiceUnavailableException 처리",
       "request": {
         "method": "GET",
+        "description": "Controller에서 ServiceUnavailableException을 발생시키고 GlobalExceptionHandler가 503 응답으로 변환하는지 확인합니다.",
         "url": "{{baseUrl}}/api/v1/server-status/unavailable"
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP 상태 코드가 503이다\", function () {",
+              "    pm.response.to.have.status(503);",
+              "});",
+              "pm.test(\"공통 오류 응답 형식이다\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql(503);",
+              "    pm.expect(body).to.have.property(\"data\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "503 - 실제 상품 서비스 비활성화",
+      "request": {
+        "method": "GET",
+        "description": "먼저 ./gradlew bootRun --args='--item.service.available=false' 명령으로 서버를 실행해야 합니다. 일반 상품 조회 과정에서 서비스 상태를 검사하고 실제 ServiceUnavailableException을 발생시킵니다.",
+        "url": "{{baseUrl}}/api/v1/items"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"비활성화된 상품 서비스가 503을 반환한다\", function () {",
+              "    pm.response.to.have.status(503);",
+              "});",
+              "pm.test(\"ServiceUnavailableException 메시지가 반환된다\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql(503);",
+              "    pm.expect(body.data).to.include(\"상품 서비스를 사용할 수 없습니다\");",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "v2 - Query Parameter 검색",

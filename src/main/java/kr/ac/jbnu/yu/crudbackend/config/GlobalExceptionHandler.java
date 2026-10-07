@@ -1,6 +1,7 @@
 package kr.ac.jbnu.yu.crudbackend.config;
 
 import kr.ac.jbnu.yu.crudbackend.api.dto.ApiResponse;
+import kr.ac.jbnu.yu.crudbackend.exception.ServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,17 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse<String>> handleServiceUnavailable(
+            ServiceUnavailableException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.of(
+                        HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        exception.getMessage()
+                ));
+    }
 
     @ExceptionHandler({
             HttpMessageNotReadableException.class,

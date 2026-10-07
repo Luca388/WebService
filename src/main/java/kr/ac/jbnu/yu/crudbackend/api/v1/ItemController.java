@@ -4,6 +4,8 @@ import kr.ac.jbnu.yu.crudbackend.api.dto.ApiResponse;
 import kr.ac.jbnu.yu.crudbackend.api.dto.ItemDto;
 import kr.ac.jbnu.yu.crudbackend.api.request.ItemCreateRequest;
 import kr.ac.jbnu.yu.crudbackend.api.request.ItemUpdateRequest;
+import kr.ac.jbnu.yu.crudbackend.exception.ServiceUnavailableException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,21 +27,27 @@ import java.util.Map;
 public class ItemController {
 
     private final Map<Long, ItemDto> store = new LinkedHashMap<>();
+    private final boolean serviceAvailable;
     private long sequence = 0L;
 
-    public ItemController() {
+    public ItemController(
+            @Value("${item.service.available:true}") boolean serviceAvailable
+    ) {
+        this.serviceAvailable = serviceAvailable;
         saveItem("노트북", 1_500_000);
         saveItem("마우스", 30_000);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getItems() {
+        checkServiceAvailable();
         List<ItemDto> items = new ArrayList<>(store.values());
         return ok(items);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getItem(@PathVariable Long id) {
+        checkServiceAvailable();
         ItemDto item = store.get(id);
 
         if (item == null) {
@@ -51,6 +59,7 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createItem(@RequestBody ItemCreateRequest request) {
+        checkServiceAvailable();
         String validationMessage = validateItem(request.getName(), request.getPrice());
 
         if (validationMessage != null) {
@@ -64,6 +73,7 @@ public class ItemController {
 
     @PostMapping("/sample")
     public ResponseEntity<ApiResponse<?>> createSampleItem() {
+        checkServiceAvailable();
         ItemDto item = saveItem("샘플 상품", 1_000);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.of(HttpStatus.CREATED.value(), item));
@@ -74,6 +84,7 @@ public class ItemController {
             @PathVariable Long id,
             @RequestBody ItemUpdateRequest request
     ) {
+        checkServiceAvailable();
         ItemDto item = store.get(id);
 
         if (item == null) {
@@ -106,6 +117,7 @@ public class ItemController {
             @PathVariable Long id,
             @RequestBody ItemUpdateRequest request
     ) {
+        checkServiceAvailable();
         ItemDto item = store.get(id);
 
         if (item == null) {
@@ -122,6 +134,7 @@ public class ItemController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteItem(@PathVariable Long id) {
+        checkServiceAvailable();
         ItemDto removedItem = store.remove(id);
 
         if (removedItem == null) {
@@ -133,6 +146,7 @@ public class ItemController {
 
     @DeleteMapping
     public ResponseEntity<ApiResponse<?>> deleteAllItems() {
+        checkServiceAvailable();
         int deletedCount = store.size();
         store.clear();
 
@@ -144,6 +158,14 @@ public class ItemController {
         ItemDto item = new ItemDto(++sequence, name, price);
         store.put(item.getId(), item);
         return item;
+    }
+
+    private void checkServiceAvailable() {
+        if (!serviceAvailable) {
+            throw new ServiceUnavailableException(
+                    "현재 상품 서비스를 사용할 수 없습니다."
+            );
+        }
     }
 
     private String validateItem(String name, Integer price) {
