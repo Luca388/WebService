@@ -53,10 +53,10 @@ const POSTS = Array.from({ length: 1000 }, (_, i) => {
   };
 });
 
-// 화이트리스트 정렬 정의 (동점자 방지 id 결합)
+// YYYY-MM-DD 형식의 작성일을 먼저 비교하고, 같은 날짜는 id로 순서를 고정한다.
 const SORT_WHITELIST = Object.freeze({
-  latest: (a, b) => b.id - a.id,
-  oldest: (a, b) => a.id - b.id,
+  latest: (a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id,
+  oldest: (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id - b.id,
   views: (a, b) => (b.views !== a.views ? b.views - a.views : b.id - a.id)
 });
 
