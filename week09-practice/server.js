@@ -82,7 +82,10 @@ app.get('/api/posts', (req, res) => {
   });
 
   // 2) 화이트리스트 정렬 (ORDER BY ...)
-  const sortComparator = SORT_WHITELIST[sortKey] || SORT_WHITELIST.latest;
+  // 직접 등록된 키만 허용하고, 잘못된 값과 상속 속성은 최신순으로 처리한다.
+  const sortComparator = Object.hasOwn(SORT_WHITELIST, sortKey)
+    ? SORT_WHITELIST[sortKey]
+    : SORT_WHITELIST.latest;
   filtered.sort(sortComparator);
 
   // 3) 오프셋 계산 및 데이터 슬라이싱
