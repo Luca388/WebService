@@ -228,6 +228,7 @@
         <option value="views">조회수순 (views DESC, id DESC)</option>
         <option value="oldest">오래된순 (created_at ASC, id ASC)</option>
       </select>
+      <span id="cursorSortLabel" class="select-box" hidden>ID 내림차순 고정</span>
       <button class="btn" onclick="applySearch()">조회</button>
     </div>
 
@@ -306,17 +307,19 @@
   let debounceTimer = null;
 
   // 모드 변경 (오프셋 vs 커서)
-  function switchMode(newMode) {
+  function switchMode(newMode, pushHistory = true) {
     mode = newMode;
     document.getElementById('tabOffset').classList.toggle('active', mode === 'offset');
     document.getElementById('tabCursor').classList.toggle('active', mode === 'cursor');
     document.getElementById('paginationBar').style.display = (mode === 'offset') ? 'flex' : 'none';
     document.getElementById('cursorMoreWrap').style.display = (mode === 'cursor') ? 'flex' : 'none';
+    document.getElementById('sortSelect').hidden = mode === 'cursor';
+    document.getElementById('cursorSortLabel').hidden = mode !== 'cursor';
 
-    state.page = 1;
+    if (pushHistory) state.page = 1;
     state.cursor = null;
     cursorPosts = [];
-    loadData(true);
+    loadData(pushHistory);
   }
 
   // 데이터 로드
@@ -329,9 +332,10 @@
 
     const t0 = performance.now();
     let endpoint = '';
+    let q;
 
     if (mode === 'offset') {
-      const q = new URLSearchParams({
+      q = new URLSearchParams({
         page: state.page,
         limit: state.limit,
         sort: state.sort
@@ -343,8 +347,9 @@
         window.history.pushState({}, '', `?${q.toString()}`);
       }
     } else {
-      const q = new URLSearchParams({ limit: state.limit });
+      q = new URLSearchParams({ limit: state.limit });
       if (state.cursor) q.set('cursor', state.cursor);
+      if (state.search) q.set('search', state.search);
       endpoint = `/api/posts/cursor?${q.toString()}`;
     }
 
@@ -353,17 +358,27 @@
     try {
       const res = await fetch(endpoint, { signal });
       const json = await res.json();
+      if (signal.aborted) return;
       const t1 = performance.now();
 
       document.getElementById('latencyBadge').textContent = `${(t1 - t0).toFixed(2)}ms`;
       document.getElementById('inspectJson').textContent = JSON.stringify(json, null, 2);
+
+      if (mode === 'offset') {
+        state.page = json.meta.page;
+        q.set('page', state.page);
+        const url = `?${q.toString()}`;
+        if (window.location.search !== url) {
+          window.history.replaceState(window.history.state, '', url);
+        }
+      }
 
       // SQL 미리보기 업데이트
       updateSqlInspector();
 
       if (mode === 'offset') {
         renderTable(json.items);
-        renderPagination(json.meta.page, json.meta.totalPages);
+        renderPagination(state.page, json.meta.totalPages);
       } else {
         if (!state.cursor) cursorPosts = [];
         cursorPosts = [...cursorPosts, ...json.items];
@@ -432,37 +447,45 @@
   }
 
   function applySearch() {
+    clearTimeout(debounceTimer);
     state.search = document.getElementById('searchInput').value.trim();
     state.page = 1;
     state.cursor = null;
+    if (mode === 'cursor') {
+      cursorPosts = [];
+      state.hasNext = false;
+      document.getElementById('tableBody').replaceChildren();
+      const btnMore = document.getElementById('btnMore');
+      btnMore.disabled = true;
+      btnMore.textContent = '더 보기';
+    }
     loadData(true);
   }
 
   function updateSqlInspector() {
     const sqlBox = document.getElementById('inspectSql');
+    const searchCondition = state.search ? `(title LIKE '%${state.search}%' OR content LIKE '%${state.search}%')` : '';
     if (mode === 'offset') {
       const offset = (state.page - 1) * state.limit;
       let sortClause = 'created_at DESC, id DESC';
       if (state.sort === 'views') sortClause = 'views DESC, id DESC';
       else if (state.sort === 'oldest') sortClause = 'created_at ASC, id ASC';
 
-      let whereClause = state.search ? `WHERE (title LIKE '%${state.search}%' OR content LIKE '%${state.search}%') ` : '';
+      const whereClause = searchCondition ? `WHERE ${searchCondition} ` : '';
       sqlBox.textContent = `SELECT id, title, author, views, created_at FROM posts ${whereClause}ORDER BY ${sortClause} LIMIT ${state.limit} OFFSET ${offset};`;
     } else {
-      let whereClause = state.cursor ? `WHERE id < ${state.cursor} ` : '';
+      const cursorCondition = state.cursor ? `id < ${state.cursor}` : '';
+      const conditions = [cursorCondition, searchCondition].filter(Boolean).join(' AND ');
+      const whereClause = conditions ? `WHERE ${conditions} ` : '';
       sqlBox.textContent = `SELECT id, title, author, views, created_at FROM posts ${whereClause}ORDER BY id DESC LIMIT ${state.limit + 1};`;
     }
   }
 
   // 300ms 디바운스 실시간 검색 인풋 이벤트
-  document.getElementById('searchInput').addEventListener('input', (e) => {
+  document.getElementById('searchInput').addEventListener('input', () => {
+    currentAbortController?.abort();
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      state.search = e.target.value.trim();
-      state.page = 1;
-      state.cursor = null;
-      loadData(true);
-    }, 300);
+    debounceTimer = setTimeout(applySearch, 300);
   });
 
   document.getElementById('sortSelect').addEventListener('change', (e) => {
@@ -472,29 +495,23 @@
     loadData(true);
   });
 
-  // 뒤로 가기(popstate) 이벤트 처리
-  window.addEventListener('popstate', () => {
+  function restoreOffsetFromUrl() {
+    clearTimeout(debounceTimer);
     const params = new URLSearchParams(window.location.search);
-    state.page = parseInt(params.get('page'), 10) || 1;
-    state.sort = params.get('sort') || 'latest';
-    state.search = params.get('search') || '';
+    const sortSelect = document.getElementById('sortSelect');
+    const page = parseInt(params.get('page'), 10);
+    state.page = page > 0 ? page : 1;
+    sortSelect.value = params.get('sort') || 'latest';
+    state.sort = sortSelect.value || 'latest';
+    state.search = (params.get('search') || '').trim();
 
     document.getElementById('searchInput').value = state.search;
-    document.getElementById('sortSelect').value = state.sort;
-    loadData(false);
-  });
+    sortSelect.value = state.sort;
+    switchMode('offset', false);
+  }
 
-  // 초기 로드 시 주소창 파라미터 복원
-  window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    state.page = parseInt(params.get('page'), 10) || 1;
-    state.sort = params.get('sort') || 'latest';
-    state.search = params.get('search') || '';
-
-    document.getElementById('searchInput').value = state.search;
-    document.getElementById('sortSelect').value = state.sort;
-    loadData(false);
-  });
+  window.addEventListener('popstate', restoreOffsetFromUrl);
+  window.addEventListener('DOMContentLoaded', restoreOffsetFromUrl);
 </script>
 </body>
 </html>

@@ -14,6 +14,7 @@
 
 const express = require('express');
 const path = require('path');
+const createPostSearch = require('./post-search');
 const app = express();
 const PORT = 3000;
 
@@ -72,14 +73,10 @@ app.get('/api/posts', (req, res) => {
   const rawLimit = parseInt(req.query.limit, 10);
   const page = (!isNaN(rawPage) && rawPage > 0) ? rawPage : 1;
   const limit = (!isNaN(rawLimit) && rawLimit > 0) ? Math.min(rawLimit, 100) : 10;
-  const search = (req.query.search || '').trim().toLowerCase();
   const sortKey = req.query.sort || 'latest';
 
-  // 1) 검색 필터링 (WHERE title LIKE '%search%')
-  let filtered = POSTS.filter(p => {
-    if (!search) return true;
-    return p.title.toLowerCase().includes(search) || p.content.toLowerCase().includes(search);
-  });
+  // 1) 제목·본문 검색 필터링
+  const filtered = POSTS.filter(createPostSearch(req.query.search));
 
   // 2) 화이트리스트 정렬 (ORDER BY ...)
   // 직접 등록된 키만 허용하고, 잘못된 값과 상속 속성은 최신순으로 처리한다.
@@ -115,19 +112,18 @@ app.get('/api/posts', (req, res) => {
 
 // ==========================================
 // 2. 커서 기반(Keyset) 페이지네이션 API
-// GET /api/posts/cursor?cursor=950&limit=10
+// GET /api/posts/cursor?cursor=950&limit=10&search=인덱스
 // ==========================================
 app.get('/api/posts/cursor', (req, res) => {
   const startTime = process.hrtime();
 
   const rawCursor = parseInt(req.query.cursor, 10);
   const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 10), 50);
+  const matchesSearch = createPostSearch(req.query.search);
+  const hasCursor = rawCursor > 0;
 
-  // 커서가 있으면 해당 id보다 작은 항목들만 탐색 (WHERE id < ? ORDER BY id DESC)
-  let candidate = POSTS;
-  if (!isNaN(rawCursor) && rawCursor > 0) {
-    candidate = POSTS.filter(p => p.id < rawCursor);
-  }
+  // ID 내림차순을 유지하며 커서와 제목·본문 검색 조건을 함께 적용한다.
+  const candidate = POSTS.filter(p => (!hasCursor || p.id < rawCursor) && matchesSearch(p));
 
   // limit + 1개를 조회하여 다음 데이터 존재 여부(hasNext) 판단 (COUNT(*) 제거)
   const sliced = candidate.slice(0, limit + 1);
