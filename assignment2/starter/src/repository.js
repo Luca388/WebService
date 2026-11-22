@@ -15,6 +15,9 @@ export function createRepository(db) {
     mine(userId) { return db.prepare(selection+' WHERE a.user_id=? ORDER BY a.id DESC').all(userId); },
     forEvent(eventId) { return db.prepare(selection+' WHERE a.event_id=? ORDER BY a.id').all(eventId); },
     approvedCount(eventId) { return db.prepare("SELECT COUNT(*) AS n FROM applications WHERE event_id=? AND status='APPROVED'").get(eventId).n; },
+    // [학생 추가] 자동 승급 대상: 같은 행사 PENDING 중 created_at ASC, id ASC 첫 1건.
+    // created_at은 고정 형식 ISO 문자열(strftime)이라 문자열 정렬이 시간 순서와 같고, 동시각은 id로 고정합니다.
+    nextPending(eventId) { return db.prepare(selection+" WHERE a.event_id=? AND a.status='PENDING' ORDER BY a.created_at ASC, a.id ASC LIMIT 1").get(eventId); },
     insert(eventId,userId) { const r=db.prepare("INSERT INTO applications(event_id,user_id,status) VALUES (?,?,'PENDING')").run(eventId,userId); return this.application(Number(r.lastInsertRowid)); },
     // 대기 순서와 이력 저장 시점, 트랜잭션 경계는 서비스에서 결정합니다.
     history(id) { return db.prepare(`SELECT id,application_id AS applicationId,actor_id AS actorId,
