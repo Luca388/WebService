@@ -1,22 +1,27 @@
-# 웹서비스설계 한국어 분반 과제 2
+# 웹서비스설계 한국어 분반 과제 2 · 신청 승인 서비스
 
-신청 승인 서비스의 업무 규칙과 트랜잭션을 구현하는 개인 과제입니다.
+신청·대기 취소·직접 승인·승인 취소·대기열 자동 승급·변경 이력을 트랜잭션으로 구현한 개인 과제입니다.
 
-**제출 마감: 2026년 11월 25일 23:59 (한국 시간)**
+## 제출물 위치
 
-## 배포 자료
+|항목|위치|
+|---|---|
+|소스와 실행·초기화 방법, 변경 파일, 구현 완료 여부|[starter/README.md](starter/README.md)|
+|보고서 PDF|[starter/docs/report.pdf](starter/docs/report.pdf)|
+|보고서 3~6장 검증 증거와 수집 스크립트|[starter/docs/evidence/](starter/docs/evidence/)|
+|API 계약|[starter/docs/API.md](starter/docs/API.md)|
+|의존성 고정|[starter/package-lock.json](starter/package-lock.json)|
 
-- [과제 안내문](01_과제2_안내문.pdf): 필수 정책, 검증 시나리오, 제출 방법과 평가 기준
-- [시작 코드 실행 안내](starter/README.md): Node.js 24.x 설치·실행·테스트 방법
-- [보고서 양식](03_보고서_양식.docx): 작성 후 PDF로 제출
+## 빠른 실행
 
-## 시작하기
+```sh
+cd assignment2/starter
+npm ci
+echo RESET | npm run db:reset
+npm run test:assignment
+npm start   # http://127.0.0.1:3000
+```
 
-1. 안내문과 `starter/docs/API.md`를 읽습니다.
-2. `starter` 폴더에서 `npm ci`, `npm test`, `npm start`를 실행합니다.
-3. `starter/src/application-service.js`의 TODO 4개와 트랜잭션 처리를 구현합니다.
-4. 필수 테스트 32개와 화면 검증 5개를 수행하고 증거를 보고서에 기록합니다.
+Node.js 24.x가 필요합니다. 자세한 내용은 [starter/README.md](starter/README.md)를 보세요.
 
-처음에는 TODO 기능이 501을 반환하고 필수 테스트 일부가 실패합니다. 기반 테스트 4개는 처음부터 통과해야 합니다.
-
-이 배포본의 필수 기능은 신청·대기 취소·직접 승인·승인 취소·대기열 자동 승급·변경 이력입니다. 이전 시작 코드를 실행했다면 새 코드의 DB 초기화 절차를 따르세요.
+수업 배포 자료(과제 안내문 PDF, 보고서 양식 docx)는 저장소에 포함하지 않았습니다.
