@@ -126,7 +126,7 @@ npm run db:reset
 macOS, Node.js v24.3.0, npm. 새 폴더에서 아래 순서로 재현을 확인했습니다.
 
 ```sh
-git clone -b assignment2 https://github.com/Luca388/WebService.git
+git clone https://github.com/Luca388/WebService.git
 cd WebService/assignment2/starter
 npm ci
 echo RESET | npm run db:reset   # 서버를 끈 상태에서 실행
