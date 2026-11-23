@@ -1,4 +1,4 @@
-# 과제 2 신청 승인 서비스 시작 코드
+# 과제 2 신청 승인 서비스
 
 신청·대기 취소·직접 승인·승인 취소·대기열 자동 승급·변경 이력을 구현합니다. 상위 폴더의 [안내문](../01_과제2_안내문.pdf)과 [API 계약](docs/API.md)을 먼저 읽으세요.
 
@@ -98,11 +98,57 @@ npm run db:reset
 - `tests/`: 기반·필수·선택 심화 테스트
 - `docs/API.md`: 상태·이력·입출력 계약
 
-## 제출 전 작성할 내용
+## 제출 내용 (학생 작성)
 
-이 부분을 본인의 서비스 소개, 변경 파일, 구현 완료 여부, 실행 환경, 알려진 문제, 보고서·검증 증거 링크와 AI 사용 요약으로 바꾸세요. GitHub URL·커밋 SHA를 LMS에 제출하고 보고서 PDF를 저장소 `docs/report.pdf`와 LMS에 같은 버전으로 첨부합니다.
+### 서비스 소개
 
-`node_modules`, 생성 DB·서명 키, 실제 `.env`·JWT와 개인 정보는 제출하지 않습니다. 제공 코드와 직접 구현한 부분을 구분합니다.
+학생이 행사에 참가 신청하고 담당 운영자가 승인·승인 취소하는 서비스입니다. 승인 취소로 자리가 비면 같은 행사의 가장 먼저 대기한 학생 1명을 자동 승인합니다. 모든 상태 변경은 변경 이력과 함께 한 트랜잭션으로 저장되고, 거부나 저장 오류가 나면 요청 전 상태로 되돌립니다.
+
+### 변경 파일
+
+|파일|구분|내용|
+|---|---|---|
+|`src/application-service.js`|직접 구현|TODO-01~04(`apply`·`cancel`·`approve`·`revoke`), 공통 함수 `inTransaction`(BEGIN IMMEDIATE~COMMIT/ROLLBACK)·`isManagerOf`·`loadTarget`|
+|`src/repository.js`|함수 추가|`nextPending`: 같은 행사 PENDING 중 `created_at ASC, id ASC` 첫 1건|
+|`docs/evidence/`|추가|보고서 3~6장 증거 수집 스크립트 `collect.sh`와 결과 txt 4개|
+|`docs/report.pdf`|추가|보고서|
+
+그 밖의 파일(인증, DB 스키마, 조회 API, 입력 검사, 화면, 테스트)은 제공 코드 그대로입니다.
+
+### 구현 완료 여부
+
+- TODO-01~04: 완료
+- `npm test` 4/4, `npm run test:assignment` T01~T32 32/32, `npm run test:advanced`(선택 심화) 1/1 통과
+- 화면 검증 U01~U05: 완료 (보고서 7장)
+
+### 실행 환경
+
+macOS, Node.js v24.3.0, npm. 새 폴더에서 아래 순서로 재현을 확인했습니다.
+
+```sh
+git clone -b assignment2 https://github.com/Luca388/WebService.git
+cd WebService/assignment2/starter
+npm ci
+echo RESET | npm run db:reset   # 서버를 끈 상태에서 실행
+npm run test:assignment
+npm start                       # http://127.0.0.1:3000
+```
+
+### 알려진 문제와 한계
+
+- 동시 승인 보호는 SQLite 파일 하나를 같은 컴퓨터에서 공유하는 경우에만 유효합니다. 쓰기 요청은 한 번에 하나씩 처리되므로 요청이 많으면 대기가 생길 수 있습니다.
+- 서버 시작 메시지의 "TODO 구현 전 501" 문구는 제공 코드(`src/server.js`)를 바꾸지 않아 그대로 남아 있습니다. 기능은 모두 구현되어 있습니다.
+
+### 보고서와 검증 증거
+
+- 보고서: [docs/report.pdf](docs/report.pdf)
+- 3~6장 상세 증거: [docs/evidence/](docs/evidence/). `bash docs/evidence/collect.sh`로 다시 만들 수 있습니다. 별도 임시 DB와 3100번 포트를 사용하므로 `data/app.sqlite`는 바뀌지 않습니다.
+
+### AI 사용 요약
+
+Claude Code(Claude Opus 5.5)를 사용해 TODO-01~04 구현, `nextPending` 추가, 증거 수집 스크립트 작성을 했습니다. 모든 결과는 자동 테스트, 증거 스크립트, 화면 검증(U01~U05)으로 직접 확인했습니다. 자세한 내용은 보고서의 AI 활용 절에 있습니다.
+
+`node_modules`, 생성 DB·서명 키, 실제 `.env`·JWT와 개인 정보는 저장소에 포함하지 않습니다.
 
 ## 참고 문서
 

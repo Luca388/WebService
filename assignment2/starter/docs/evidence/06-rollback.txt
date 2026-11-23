@@ -1,0 +1,55 @@
+# 6장 롤백 증거 (T29): AUTO_APPROVE 이력 저장을 트리거로 실패시킴
+[요청 전] applications
+id  user   event   status          created_at
+--  -----  -----  --------  ------------------------
+ 1  alice      2  APPROVED  2026-11-23T09:50:25.122Z
+ 2  bob        2  PENDING   2026-11-23T09:50:25.160Z
+
+[요청 전] application_history
+id  app  actor  action   from_s     to_s    reason  cause
+--  ---  -----  -------  -------  --------  ------  -----
+ 1    1      1  APPLY             PENDING
+ 2    1      4  APPROVE  PENDING  APPROVED
+ 3    2      2  APPLY             PENDING
+
+## 트리거 설치
+CREATE TRIGGER fail_auto BEFORE INSERT ON application_history WHEN NEW.action='AUTO_APPROVE' BEGIN SELECT RAISE(ABORT,'TEST_INJECTED_FAILURE'); END;
+
+▶ POST /api/applications/1/revoke  (행위자: manager2, Authorization: Bearer [가림])  본문: {"reason":"운영 사정으로 승인 취소"}
+◀ HTTP 500  {"code":"INTERNAL_ERROR","message":"서버에서 처리하지 못했습니다."}
+
+[실패 요청 후] applications
+id  user   event   status          created_at
+--  -----  -----  --------  ------------------------
+ 1  alice      2  APPROVED  2026-11-23T09:50:25.122Z
+ 2  bob        2  PENDING   2026-11-23T09:50:25.160Z
+
+[실패 요청 후] application_history
+id  app  actor  action   from_s     to_s    reason  cause
+--  ---  -----  -------  -------  --------  ------  -----
+ 1    1      1  APPLY             PENDING
+ 2    1      4  APPROVE  PENDING  APPROVED
+ 3    2      2  APPLY             PENDING
+
+요청 전후 데이터 해시: 785d706b48cb → 785d706b48cb  (동일)
+
+## 트리거 제거 후 재시도
+DROP TRIGGER fail_auto;
+▶ POST /api/applications/1/revoke  (행위자: manager2, Authorization: Bearer [가림])  본문: {"reason":"운영 사정으로 승인 취소"}
+◀ HTTP 200  {"revoked":{"id":1,"eventId":2,"userId":1,"status":"REVOKED","createdAt":"2026-11-23T09:50:25.122Z","updatedAt":"2026-11-23T09:50:25.250Z","applicantName":"민지","eventTitle":"서비스 설계 스터디"},"promoted":{"id":2,"eventId":2,"userId":2,"status":"APPROVED","createdAt":"2026-11-23T09:50:25.160Z","updatedAt":"2026-11-23T09:50:25.250Z","applicantName":"준호","eventTitle":"서비스 설계 스터디"}}
+
+[재시도 후] applications
+id  user   event   status          created_at
+--  -----  -----  --------  ------------------------
+ 1  alice      2  REVOKED   2026-11-23T09:50:25.122Z
+ 2  bob        2  APPROVED  2026-11-23T09:50:25.160Z
+
+[재시도 후] application_history
+id  app  actor     action      from_s     to_s            reason           cause
+--  ---  -----  ------------  --------  --------  -----------------------  -----
+ 1    1      1  APPLY                   PENDING
+ 2    1      4  APPROVE       PENDING   APPROVED
+ 3    2      2  APPLY                   PENDING
+ 4    1      4  REVOKE        APPROVED  REVOKED   운영 사정으로 승인 취소
+ 5    2      4  AUTO_APPROVE  PENDING   APPROVED                               4
+

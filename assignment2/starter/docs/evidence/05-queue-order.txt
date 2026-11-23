@@ -1,0 +1,55 @@
+# 5장 대기 순서: 행사 2(정원 1), alice 승인 후 bob·charlie 대기 → alice 승인 취소
+## 경우 A. 등록 시각이 다름 (T18): charlie(id 3)의 created_at을 bob(id 2)보다 이르게 설정
+[승인 취소 전] nextPending 정렬 결과 (created_at ASC, id ASC)
+id   user           created_at
+--  -------  ------------------------
+ 3  charlie  2026-11-20T09:00:00.000Z
+ 2  bob      2026-11-20T10:00:00.000Z
+
+▶ POST /api/applications/1/revoke  (행위자: manager2, Authorization: Bearer [가림])  본문: {"reason":"운영 사정으로 승인 취소"}
+◀ HTTP 200  {"revoked":{"id":1,"eventId":2,"userId":1,"status":"REVOKED","createdAt":"2026-11-23T09:50:23.729Z","updatedAt":"2026-11-23T09:50:23.804Z","applicantName":"민지","eventTitle":"서비스 설계 스터디"},"promoted":{"id":3,"eventId":2,"userId":5,"status":"APPROVED","createdAt":"2026-11-20T09:00:00.000Z","updatedAt":"2026-11-23T09:50:23.805Z","applicantName":"서연","eventTitle":"서비스 설계 스터디"}}
+
+[승인 취소 후] applications
+id   user    event   status          created_at
+--  -------  -----  --------  ------------------------
+ 1  alice        2  REVOKED   2026-11-23T09:50:23.729Z
+ 2  bob          2  PENDING   2026-11-20T10:00:00.000Z
+ 3  charlie      2  APPROVED  2026-11-20T09:00:00.000Z
+
+[승인 취소 후] application_history
+id  app  actor     action      from_s     to_s            reason           cause
+--  ---  -----  ------------  --------  --------  -----------------------  -----
+ 1    1      1  APPLY                   PENDING
+ 2    1      4  APPROVE       PENDING   APPROVED
+ 3    2      2  APPLY                   PENDING
+ 4    3      5  APPLY                   PENDING
+ 5    1      4  REVOKE        APPROVED  REVOKED   운영 사정으로 승인 취소
+ 6    3      4  AUTO_APPROVE  PENDING   APPROVED                               5
+
+## 경우 B. 등록 시각이 같음 (T19): bob(id 2)·charlie(id 3)의 created_at을 같게 설정
+[승인 취소 전] nextPending 정렬 결과 (created_at ASC, id ASC)
+id   user           created_at
+--  -------  ------------------------
+ 2  bob      2026-11-20T09:00:00.000Z
+ 3  charlie  2026-11-20T09:00:00.000Z
+
+▶ POST /api/applications/1/revoke  (행위자: manager2, Authorization: Bearer [가림])  본문: {"reason":"운영 사정으로 승인 취소"}
+◀ HTTP 200  {"revoked":{"id":1,"eventId":2,"userId":1,"status":"REVOKED","createdAt":"2026-11-23T09:50:24.435Z","updatedAt":"2026-11-23T09:50:24.507Z","applicantName":"민지","eventTitle":"서비스 설계 스터디"},"promoted":{"id":2,"eventId":2,"userId":2,"status":"APPROVED","createdAt":"2026-11-20T09:00:00.000Z","updatedAt":"2026-11-23T09:50:24.507Z","applicantName":"준호","eventTitle":"서비스 설계 스터디"}}
+
+[승인 취소 후] applications
+id   user    event   status          created_at
+--  -------  -----  --------  ------------------------
+ 1  alice        2  REVOKED   2026-11-23T09:50:24.435Z
+ 2  bob          2  APPROVED  2026-11-20T09:00:00.000Z
+ 3  charlie      2  PENDING   2026-11-20T09:00:00.000Z
+
+[승인 취소 후] application_history
+id  app  actor     action      from_s     to_s            reason           cause
+--  ---  -----  ------------  --------  --------  -----------------------  -----
+ 1    1      1  APPLY                   PENDING
+ 2    1      4  APPROVE       PENDING   APPROVED
+ 3    2      2  APPLY                   PENDING
+ 4    3      5  APPLY                   PENDING
+ 5    1      4  REVOKE        APPROVED  REVOKED   운영 사정으로 승인 취소
+ 6    2      4  AUTO_APPROVE  PENDING   APPROVED                               5
+

@@ -1,0 +1,51 @@
+# 3장 거부 사례 상세
+## 사례 A. 오래된 화면 승인 (T10, R8): alice가 대기 취소한 뒤 manager1이 예전 화면에서 승인
+▶ POST /api/applications/1/cancel  (행위자: alice, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 200  {"id":1,"eventId":1,"userId":1,"status":"CANCELLED","createdAt":"2026-11-23T09:50:22.190Z","updatedAt":"2026-11-23T09:50:22.209Z","applicantName":"민지","eventTitle":"함께 만드는 웹 서비스"}
+[요청 전] applications
+id  user   event   status           created_at
+--  -----  -----  ---------  ------------------------
+ 1  alice      1  CANCELLED  2026-11-23T09:50:22.190Z
+
+[요청 전] application_history
+id  app  actor  action  from_s     to_s     reason  cause
+--  ---  -----  ------  -------  ---------  ------  -----
+ 1    1      1  APPLY            PENDING
+ 2    1      1  CANCEL  PENDING  CANCELLED
+
+▶ POST /api/applications/1/approve  (행위자: manager1, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 409  {"code":"INVALID_STATE","message":"현재 상태에서는 이 작업을 수행할 수 없습니다."}
+
+[요청 후] applications
+id  user   event   status           created_at
+--  -----  -----  ---------  ------------------------
+ 1  alice      1  CANCELLED  2026-11-23T09:50:22.190Z
+
+[요청 후] application_history
+id  app  actor  action  from_s     to_s     reason  cause
+--  ---  -----  ------  -------  ---------  ------  -----
+ 1    1      1  APPLY            PENDING
+ 2    1      1  CANCEL  PENDING  CANCELLED
+
+요청 전후 데이터 해시: 9e559f5ab843 → 9e559f5ab843  (동일)
+
+## 사례 B. 비담당자 승인 (T09, R1): 행사 1(담당 manager1)의 신청을 manager2가 승인
+▶ POST /api/applications/2/approve  (행위자: manager2, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 403  {"code":"FORBIDDEN","message":"이 작업을 수행할 권한이 없습니다."}
+▶ POST /api/applications/2/approve  (행위자: bob, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 403  {"code":"FORBIDDEN","message":"이 작업을 수행할 권한이 없습니다."}
+
+[요청 후] applications
+id  user   event   status           created_at
+--  -----  -----  ---------  ------------------------
+ 1  alice      1  CANCELLED  2026-11-23T09:50:22.190Z
+ 2  bob        1  PENDING    2026-11-23T09:50:22.342Z
+
+[요청 후] application_history
+id  app  actor  action  from_s     to_s     reason  cause
+--  ---  -----  ------  -------  ---------  ------  -----
+ 1    1      1  APPLY            PENDING
+ 2    1      1  CANCEL  PENDING  CANCELLED
+ 3    2      2  APPLY            PENDING
+
+요청 전후 데이터 해시: 5cb921405f7e → 5cb921405f7e  (동일)

@@ -1,0 +1,14 @@
+# 4장 정원과 최신 상태 (T13): 행사 2 정원 1명, 담당 manager2
+## 두 신청 모두 PENDING인 화면에서 manager2가 차례로 승인
+▶ POST /api/applications/1/approve  (행위자: manager2, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 200  {"id":1,"eventId":2,"userId":2,"status":"APPROVED","createdAt":"2026-11-23T09:50:23.026Z","updatedAt":"2026-11-23T09:50:23.063Z","applicantName":"준호","eventTitle":"서비스 설계 스터디"}
+▶ POST /api/applications/2/approve  (행위자: manager2, Authorization: Bearer [가림])  본문: {}
+◀ HTTP 409  {"code":"CAPACITY_FULL","message":"정원이 모두 찼습니다."}
+
+## 재조회
+행사 2 승인 인원/정원: 1/1
+id   user    event   status          created_at
+--  -------  -----  --------  ------------------------
+ 1  bob          2  APPROVED  2026-11-23T09:50:23.026Z
+ 2  charlie      2  PENDING   2026-11-23T09:50:23.047Z
+거부 요청 전후 데이터 해시: 76a7385f011e → 76a7385f011e  (동일)
