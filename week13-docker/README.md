@@ -9,7 +9,7 @@
 |[project/Dockerfile](project/Dockerfile)|`nginx:1.28-alpine` 위에 `index.html`을 복사하는 2줄짜리 Dockerfile (확장자 없음)|
 |[project/.dockerignore](project/.dockerignore)|빌드 컨텍스트에 `Dockerfile`과 `index.html`만 보냄|
 |[project/index.html](project/index.html)|Nginx가 제공하는 웹페이지 (현재 v2)|
-|[evidence/](evidence/)|실습 00~07 명령과 실제 출력 기록, 수집 스크립트|
+|[evidence/](evidence/)|실습 00~07 명령과 실제 출력 기록, 수집·검사 스크립트|
 
 수업 배포 자료(실습 안내 HTML, 보고서 양식 docx 등)는 저장소에 포함하지 않았습니다.
 
@@ -86,7 +86,23 @@ bash evidence/collect.sh 0 1 2 3 4 5   # v1 실습
 # project/index.html의 h1을 v2로 수정·저장
 bash evidence/collect.sh 6             # v2 빌드·비교
 bash evidence/collect.sh 7             # 캡처 저장 후 정리
+bash evidence/verify.sh                # 기록이 관찰 기준과 맞는지 검사
 ```
+
+## 다른 환경에서 재현 (GitHub Actions)
+
+[![week13-docker](https://github.com/Luca388/WebService/actions/workflows/week13-docker.yml/badge.svg)](https://github.com/Luca388/WebService/actions/workflows/week13-docker.yml)
+
+[.github/workflows/week13-docker.yml](../.github/workflows/week13-docker.yml)이 GitHub의 Linux **amd64**와 **arm64** 러너에서 실습 00~07을 처음부터 다시 실행합니다. 이어서 [evidence/verify.sh](evidence/verify.sh)로 아래 관찰 기준을 검사합니다. 각 러너의 실행 기록은 Actions 실행 페이지의 아티팩트(`evidence-amd64`, `evidence-arm64`)에 있습니다.
+
+- v1 응답, 요청 로그, 포트 연결
+- 중지·시작 후 ID 유지
+- A·B 파일 격리
+- 재시작과 재생성의 차이
+- v1·v2 비교
+- 정리 결과
+
+실습 00~05는 v1 커밋(`8deb683`)의 `index.html`로, 실습 06은 현재 커밋의 `index.html`(v2)로 진행합니다.
 
 ## 정리
 

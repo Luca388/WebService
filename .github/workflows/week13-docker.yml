@@ -1,0 +1,67 @@
+# 13주차 Docker 실습을 GitHub 러너(리눅스 amd64 / arm64)에서 처음부터 다시 실행하고,
+# 결과가 실습 안내의 관찰 기준과 맞는지 검사합니다.
+# - 실습 00~05: v1 커밋(8deb683)의 index.html로 진행
+# - 실습 06: 현재 커밋의 index.html(v2)로 빌드·비교
+# - 실습 07: 실습 자원 정리
+# 각 러너의 실행 기록(evidence/*.txt)은 아티팩트로 내려받을 수 있습니다.
+name: week13-docker
+
+on:
+  push:
+    paths:
+      - "week13-docker/**"
+      - ".github/workflows/week13-docker.yml"
+  pull_request:
+    paths:
+      - "week13-docker/**"
+      - ".github/workflows/week13-docker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    name: lab (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: week13-docker
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # v1 커밋의 index.html을 꺼내기 위해 전체 이력 필요
+
+      - name: 실습 00~05 (v1)
+        run: |
+          git show 8deb683:week13-docker/project/index.html > project/index.html
+          grep -n "<h1>" project/index.html
+          bash evidence/collect.sh 0 1 2 3 4 5
+
+      - name: 실습 06 (v1 → v2)
+        run: |
+          git checkout -- project/index.html
+          grep -n "<h1>" project/index.html
+          bash evidence/collect.sh 6
+
+      - name: 실습 07 (정리)
+        run: bash evidence/collect.sh 7
+
+      - name: 관찰 기준 검사
+        run: bash evidence/verify.sh
+
+      - name: 실행 기록 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.arch }}
+          path: week13-docker/evidence/*.txt
