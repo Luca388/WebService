@@ -104,6 +104,8 @@ bash evidence/verify.sh                # 기록이 관찰 기준과 맞는지 �
 
 실습 00~05는 v1 커밋(`8deb683`)의 `index.html`로, 실습 06은 현재 커밋의 `index.html`(v2)로 진행합니다.
 
+**Windows:** GitHub의 Windows 러너는 Windows 컨테이너만 실행할 수 있어서 `nginx:alpine` 같은 Linux 컨테이너를 직접 띄울 수 없습니다. 그래서 Windows 러너에서 clone한 파일을 CRLF 줄바꿈 그대로 Linux Docker로 넘겨 빌드·실행합니다. Windows의 Docker Desktop(Linux 컨테이너)에서 이 저장소를 clone해 실습하는 경우와 같은 조건이며, 이 상태에서 `.dockerignore`·`Dockerfile`이 정상 동작하고 v2 페이지가 응답하는지 확인합니다.
+
 ## 정리
 
 실습에서 만든 컨테이너 3개와 이미지 태그 2개만 지웁니다. 기본 `nginx:1.28-alpine` 이미지와 로컬 파일은 남습니다.

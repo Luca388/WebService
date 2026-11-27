@@ -65,3 +65,50 @@ jobs:
         with:
           name: evidence-${{ matrix.arch }}
           path: week13-docker/evidence/*.txt
+
+  # Windows 러너는 Linux 컨테이너를 실행할 수 없으므로(Windows 컨테이너 전용),
+  # Windows에서 clone한 파일(CRLF 줄바꿈)을 그대로 Linux Docker로 넘겨 빌드·실행한다.
+  # Windows의 Docker Desktop(Linux 컨테이너)에서 이 저장소를 clone해 실습하는 상황과 같다.
+  windows-checkout:
+    name: windows clone
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows에서 받은 파일의 줄바꿈 확인
+        shell: pwsh
+        run: |
+          "core.autocrlf = $(git config --get core.autocrlf)"
+          foreach ($f in 'Dockerfile', '.dockerignore', 'index.html') {
+            $t = [IO.File]::ReadAllText("week13-docker/project/$f")
+            "{0,-14} CRLF {1}줄" -f $f, ([regex]::Matches($t, "`r`n").Count)
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: project-from-windows
+          path: week13-docker/project/
+          include-hidden-files: true # .dockerignore 포함
+
+  windows-files-on-linux:
+    name: windows files → linux docker
+    needs: windows-checkout
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: project-from-windows
+          path: project
+      - name: 받은 파일의 줄바꿈 확인
+        run: |
+          for f in Dockerfile .dockerignore index.html; do
+            printf '%-14s CRLF %s줄\n' "$f" "$(grep -c $'\r$' "project/$f" || true)"
+          done
+      - name: 빌드·실행·응답 확인
+        working-directory: project
+        run: |
+          set -o pipefail
+          docker build --progress=plain -t wsd13ko:win . 2>&1 | grep -E 'transferring context|COPY|naming to'
+          docker run -d --name wsd13ko-win -p 127.0.0.1:18384:80 wsd13ko:win
+          for i in $(seq 50); do curl -s -o /dev/null http://127.0.0.1:18384/ && break; sleep 0.2; done
+          curl -s -w '\nHTTP %{http_code}\n' http://127.0.0.1:18384/ | grep -E '<h1>|^HTTP'
+          curl -s http://127.0.0.1:18384/ | grep -q '<h1>Release v2 is online.</h1>'
+          docker rm -f wsd13ko-win >/dev/null && docker image rm wsd13ko:win >/dev/null
