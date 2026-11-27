@@ -64,8 +64,9 @@ check "06 v1·v2 이미지 ID 다름"       "$(diff_ "$(grep '^wsd13ko:v1 sha256
 
 f=07-cleanup.txt
 check "07 컨테이너 목록은 제목 줄만"   "$(out $f 'docker ps -a --filter name=wsd13ko-' | wc -l | tr -d ' ')" 1
-check "07 wsd13ko 이미지 없음"        "$(out $f 'docker image ls wsd13ko' | grep -c '^wsd13ko:')" 0
-check "07 기본 nginx 이미지는 남음"    "$(yes grep -q '^nginx:1.28-alpine' $f)" y
+# docker image ls 형식은 버전마다 다름: 29.x는 "nginx:1.28-alpine", 28.x는 "nginx   1.28-alpine"
+check "07 wsd13ko 이미지 없음"        "$(out $f 'docker image ls wsd13ko' | grep -cE '^wsd13ko(:| +)')" 0
+check "07 기본 nginx 이미지는 남음"    "$(out $f 'docker image ls nginx' | grep -cE '^nginx(:| +)1\.28-alpine')" 1
 
 echo
 if [ $fail -eq 0 ]; then echo "모든 관찰 기준 통과"; else echo "관찰 기준과 다른 결과가 있습니다"; fi
