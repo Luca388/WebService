@@ -78,7 +78,7 @@ docker run -d --name wsd13ko-a -p 127.0.0.1:18381:80 wsd13ko:v1
 |[04-isolation.txt](evidence/04-isolation.txt)|A·B 컨테이너 ID 다름 / 이미지 ID 같음, A에만 `/tmp/note.txt`, 마운트 없음|
 |[05-restart-recreate.txt](evidence/05-restart-recreate.txt)|재시작: ID·파일 유지 / 삭제 후 재생성: 같은 이름, 새 ID, 파일 없음|
 |[06-v1-to-v2.txt](evidence/06-v1-to-v2.txt)|파일만 고친 뒤 A는 v1, v2 빌드 후 18381=v1 / 18383=v2, 이미지 ID 비교|
-|07-cleanup.txt|정리 후 `docker ps -a`·`docker image ls` 결과 (캡처를 모두 저장한 뒤 실행)|
+|[07-cleanup.txt](evidence/07-cleanup.txt)|정리 후 `docker ps -a`·`docker image ls` 결과 (캡처 저장 후 실행), 기본 nginx 이미지와 로컬 파일은 남음|
 
 ```sh
 cd week13-docker

@@ -1,0 +1,40 @@
+# 실습 07 · 실습 자원 정리
+# 실행 시각: 2026-11-27 15:24:15 KST · 위치: week13-docker/project
+
+$ docker stop wsd13ko-a wsd13ko-b wsd13ko-v2
+wsd13ko-a
+wsd13ko-b
+wsd13ko-v2
+
+$ docker rm wsd13ko-a wsd13ko-b wsd13ko-v2
+wsd13ko-a
+wsd13ko-b
+wsd13ko-v2
+
+$ docker image rm wsd13ko:v1 wsd13ko:v2
+Untagged: wsd13ko:v1
+Deleted: sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730
+Untagged: wsd13ko:v2
+Deleted: sha256:53a56304125a3c3e9298a2ec8a4e2e6a3da2752145f2e0817a3509b59d02a31b
+
+$ docker ps -a --filter name=wsd13ko-
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker image ls wsd13ko
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE   ID             DISK USAGE   CONTENT SIZE   EXTRA
+
+# 남아 있는 기본 이미지와 로컬 파일
+
+$ docker image ls nginx
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE               ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:1.28-alpine   feb29ad4d53f       61.4MB             0B        
+
+$ ls -a
+.
+..
+.dockerignore
+Dockerfile
+index.html
+README.txt
