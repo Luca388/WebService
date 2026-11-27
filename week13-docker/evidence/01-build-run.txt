@@ -1,0 +1,101 @@
+# 실습 01 · 이미지 빌드와 컨테이너 A 실행
+# 실행 시각: 2026-11-27 11:15:13 KST · 위치: week13-docker/project
+
+$ cat Dockerfile
+FROM nginx:1.28-alpine
+COPY index.html /usr/share/nginx/html/index.html
+
+$ docker pull nginx:1.28-alpine
+1.28-alpine: Pulling from library/nginx
+d8ad8cd72600: Pulling fs layer
+0190f85b6566: Pulling fs layer
+0c9e85b345e6: Pulling fs layer
+3d2c901b120a: Pulling fs layer
+39ba19c6a1e3: Pulling fs layer
+004928619bd7: Pulling fs layer
+04e73639757d: Pulling fs layer
+40b38cc61f0e: Pulling fs layer
+004928619bd7: Waiting
+3d2c901b120a: Waiting
+04e73639757d: Waiting
+39ba19c6a1e3: Waiting
+40b38cc61f0e: Waiting
+0190f85b6566: Verifying Checksum
+0190f85b6566: Download complete
+0c9e85b345e6: Verifying Checksum
+0c9e85b345e6: Download complete
+3d2c901b120a: Verifying Checksum
+3d2c901b120a: Download complete
+d8ad8cd72600: Verifying Checksum
+d8ad8cd72600: Download complete
+d8ad8cd72600: Pull complete
+39ba19c6a1e3: Download complete
+0190f85b6566: Pull complete
+004928619bd7: Verifying Checksum
+004928619bd7: Download complete
+0c9e85b345e6: Pull complete
+3d2c901b120a: Pull complete
+39ba19c6a1e3: Pull complete
+004928619bd7: Pull complete
+04e73639757d: Verifying Checksum
+04e73639757d: Download complete
+04e73639757d: Pull complete
+40b38cc61f0e: Verifying Checksum
+40b38cc61f0e: Download complete
+40b38cc61f0e: Pull complete
+Digest: sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+Status: Downloaded newer image for nginx:1.28-alpine
+docker.io/library/nginx:1.28-alpine
+
+$ docker build -t wsd13ko:v1 .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 109B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/nginx:1.28-alpine
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 66B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.52kB done
+#4 DONE 0.0s
+
+#5 [1/2] FROM docker.io/library/nginx:1.28-alpine
+#5 DONE 0.0s
+
+#6 [2/2] COPY index.html /usr/share/nginx/html/index.html
+#6 DONE 0.1s
+
+#7 exporting to image
+#7 exporting layers done
+#7 writing image sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730 done
+#7 naming to docker.io/library/wsd13ko:v1 done
+#7 DONE 0.0s
+
+$ docker image ls wsd13ko
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE        ID             DISK USAGE   CONTENT SIZE   EXTRA
+wsd13ko:v1   c636e7dfaeb3       61.4MB             0B        
+
+$ docker run -d --name wsd13ko-a -p 127.0.0.1:18381:80 wsd13ko:v1
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ docker ps --filter name=wsd13ko-
+CONTAINER ID   IMAGE        COMMAND                   CREATED                  STATUS                  PORTS                     NAMES
+947df10abd39   wsd13ko:v1   "/docker-entrypoint.…"   Less than a second ago   Up Less than a second   127.0.0.1:18381->80/tcp   wsd13ko-a
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ curl http://127.0.0.1:18381/
+→ HTTP 200 · <h1>Release v1 is online.</h1>
+
+# 이미지 안에 COPY된 파일 확인
+
+$ docker exec wsd13ko-a grep -o "<h1>.*</h1>" /usr/share/nginx/html/index.html
+<h1>Release v1 is online.</h1>

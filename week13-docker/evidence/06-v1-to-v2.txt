@@ -1,0 +1,79 @@
+# 실습 06 · v1 → v2
+# 실행 시각: 2026-11-27 11:39:09 KST · 위치: week13-docker/project
+
+# 6-1. 로컬 index.html 수정 확인
+
+$ grep -n "<h1>" index.html
+22:  <h1>Release v2 is online.</h1>
+
+# 다시 빌드하기 전 A의 웹페이지
+
+$ curl http://127.0.0.1:18381/?step=6
+→ HTTP 200 · <h1>Release v1 is online.</h1>
+
+$ docker exec wsd13ko-a grep -o "<h1>.*</h1>" /usr/share/nginx/html/index.html
+<h1>Release v1 is online.</h1>
+
+# 6-2. 새 이미지 빌드 → 새 컨테이너 실행
+
+$ docker build -t wsd13ko:v2 .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 109B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/nginx:1.28-alpine
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 66B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.52kB done
+#4 DONE 0.0s
+
+#5 [1/2] FROM docker.io/library/nginx:1.28-alpine
+#5 CACHED
+
+#6 [2/2] COPY index.html /usr/share/nginx/html/index.html
+#6 DONE 0.0s
+
+#7 exporting to image
+#7 exporting layers done
+#7 writing image sha256:53a56304125a3c3e9298a2ec8a4e2e6a3da2752145f2e0817a3509b59d02a31b done
+#7 naming to docker.io/library/wsd13ko:v2 done
+#7 DONE 0.0s
+
+$ docker run -d --name wsd13ko-v2 -p 127.0.0.1:18383:80 wsd13ko:v2
+289f85f9f2c06bec4e30457872ed7bce1808e3d3b9859ca6354158908bc16e0a
+
+$ docker image ls wsd13ko
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE        ID             DISK USAGE   CONTENT SIZE   EXTRA
+wsd13ko:v1   c636e7dfaeb3       61.4MB             0B   U    
+wsd13ko:v2   53a56304125a       61.4MB             0B   U    
+
+$ docker ps --filter name=wsd13ko-
+CONTAINER ID   IMAGE        COMMAND                   CREATED                  STATUS                  PORTS                     NAMES
+289f85f9f2c0   wsd13ko:v2   "/docker-entrypoint.…"   Less than a second ago   Up Less than a second   127.0.0.1:18383->80/tcp   wsd13ko-v2
+6c6c1acc3e79   wsd13ko:v1   "/docker-entrypoint.…"   23 minutes ago           Up 23 minutes           127.0.0.1:18381->80/tcp   wsd13ko-a
+24cc4a873231   wsd13ko:v1   "/docker-entrypoint.…"   23 minutes ago           Up 23 minutes           127.0.0.1:18382->80/tcp   wsd13ko-b
+
+# v1(18381)과 v2(18383) 비교
+
+$ curl http://127.0.0.1:18381/
+→ HTTP 200 · <h1>Release v1 is online.</h1>
+
+$ curl http://127.0.0.1:18383/
+→ HTTP 200 · <h1>Release v2 is online.</h1>
+
+$ docker inspect --format "{{.Name}} image={{.Image}} config={{.Config.Image}}" wsd13ko-a wsd13ko-b wsd13ko-v2
+/wsd13ko-a image=sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730 config=wsd13ko:v1
+/wsd13ko-b image=sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730 config=wsd13ko:v1
+/wsd13ko-v2 image=sha256:53a56304125a3c3e9298a2ec8a4e2e6a3da2752145f2e0817a3509b59d02a31b config=wsd13ko:v2
+
+$ docker image inspect --format "{{index .RepoTags 0}} {{.Id}}" wsd13ko:v1 wsd13ko:v2
+wsd13ko:v1 sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730
+wsd13ko:v2 sha256:53a56304125a3c3e9298a2ec8a4e2e6a3da2752145f2e0817a3509b59d02a31b

@@ -1,0 +1,40 @@
+# 실습 03 · 중지와 시작
+# 실행 시각: 2026-11-27 11:15:19 KST · 위치: week13-docker/project
+
+# 중지 전
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ docker ps -a --filter name=wsd13ko- --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+NAMES       CONTAINER ID   IMAGE        STATUS                  PORTS
+wsd13ko-a   947df10abd39   wsd13ko:v1   Up Less than a second   127.0.0.1:18381->80/tcp
+
+$ docker stop wsd13ko-a
+wsd13ko-a
+
+# 중지 후
+
+$ docker ps -a --filter name=wsd13ko-
+CONTAINER ID   IMAGE        COMMAND                   CREATED        STATUS                              PORTS     NAMES
+947df10abd39   wsd13ko:v1   "/docker-entrypoint.…"   1 second ago   Exited (0) Less than a second ago             wsd13ko-a
+
+$ curl http://127.0.0.1:18381/?step=3
+curl: (7) Failed to connect to 127.0.0.1 port 18381 after 0 ms: Couldn't connect to server
+
+→ 응답 없음 (HTTP 요청 실패)
+
+$ docker start wsd13ko-a
+wsd13ko-a
+
+# 시작 후
+
+$ docker ps -a --filter name=wsd13ko-
+CONTAINER ID   IMAGE        COMMAND                   CREATED        STATUS                  PORTS                     NAMES
+947df10abd39   wsd13ko:v1   "/docker-entrypoint.…"   1 second ago   Up Less than a second   127.0.0.1:18381->80/tcp   wsd13ko-a
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ curl http://127.0.0.1:18381/?step=3
+→ HTTP 200 · <h1>Release v1 is online.</h1>

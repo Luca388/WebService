@@ -1,0 +1,45 @@
+# 실습 05 · 재시작과 재생성
+# 실행 시각: 2026-11-27 11:15:20 KST · 위치: week13-docker/project
+
+# 5-2. 같은 컨테이너 재시작
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ docker restart wsd13ko-a
+wsd13ko-a
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d
+
+$ docker exec wsd13ko-a cat /tmp/note.txt
+made-in-A
+
+# 5-3. 삭제하고 같은 이름으로 새로 만들기
+
+$ docker stop wsd13ko-a
+wsd13ko-a
+
+$ docker rm wsd13ko-a
+wsd13ko-a
+
+$ docker run -d --name wsd13ko-a -p 127.0.0.1:18381:80 wsd13ko:v1
+6c6c1acc3e79f9e03ca8194e1fad89deed151b25b5cbc61833219e2dfbcb1ca6
+
+$ docker inspect --format "{{.Id}}" wsd13ko-a
+6c6c1acc3e79f9e03ca8194e1fad89deed151b25b5cbc61833219e2dfbcb1ca6
+
+$ docker exec wsd13ko-a cat /tmp/note.txt
+cat: can't open '/tmp/note.txt': No such file or directory
+(종료 코드 1)
+
+# B는 그대로 유지되는지
+
+$ docker ps -a --filter name=wsd13ko- --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+NAMES       CONTAINER ID   IMAGE        STATUS                  PORTS
+wsd13ko-a   6c6c1acc3e79   wsd13ko:v1   Up Less than a second   127.0.0.1:18381->80/tcp
+wsd13ko-b   24cc4a873231   wsd13ko:v1   Up 1 second             127.0.0.1:18382->80/tcp
+
+$ docker exec wsd13ko-b cat /tmp/note.txt
+cat: can't open '/tmp/note.txt': No such file or directory
+(종료 코드 1)

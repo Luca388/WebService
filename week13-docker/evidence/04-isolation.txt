@@ -1,0 +1,35 @@
+# 실습 04 · 같은 이미지로 만든 A와 B
+# 실행 시각: 2026-11-27 11:15:20 KST · 위치: week13-docker/project
+
+$ docker run -d --name wsd13ko-b -p 127.0.0.1:18382:80 wsd13ko:v1
+24cc4a8732310462c85204ca2167c66ddbab452cc7e5d09c96f6bd66053cc07f
+
+$ docker inspect --format "{{.Name}} {{.Id}} {{.Image}}" wsd13ko-a wsd13ko-b
+/wsd13ko-a 947df10abd397804a938665e89ea87441aefb9d5cc377a586420981bb9023a5d sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730
+/wsd13ko-b 24cc4a8732310462c85204ca2167c66ddbab452cc7e5d09c96f6bd66053cc07f sha256:c636e7dfaeb3b1b5d4252288fddc50af4abb94d2878b4e5ccdba6f2c549b9730
+
+$ docker port wsd13ko-b
+80/tcp -> 127.0.0.1:18382
+
+$ curl http://127.0.0.1:18381/
+→ HTTP 200 · <h1>Release v1 is online.</h1>
+
+$ curl http://127.0.0.1:18382/
+→ HTTP 200 · <h1>Release v1 is online.</h1>
+
+# A 안에만 파일 만들기
+
+$ docker exec wsd13ko-a sh -c "echo made-in-A > /tmp/note.txt"
+
+$ docker exec wsd13ko-a cat /tmp/note.txt
+made-in-A
+
+$ docker exec wsd13ko-b cat /tmp/note.txt
+cat: can't open '/tmp/note.txt': No such file or directory
+(종료 코드 1)
+
+# 볼륨·바인드 마운트 연결 여부 (빈 목록 [] 이면 없음)
+
+$ docker inspect --format "{{.Name}} Mounts={{json .Mounts}}" wsd13ko-a wsd13ko-b
+/wsd13ko-a Mounts=[]
+/wsd13ko-b Mounts=[]
