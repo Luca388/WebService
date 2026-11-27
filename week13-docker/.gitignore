@@ -1,0 +1,14 @@
+# 수업 배포 자료는 공개 저장소에 올리지 않음
+*.docx
+*.pdf
+~$*
+Week13_Docker_Lab_KO.html
+과제안내.html
+00_먼저읽기.txt
+과제공지.txt
+결과기록지.txt
+제출_체크리스트.txt
+project/README.txt
+
+# 보고서용 캡처는 PDF 안에 넣으므로 로컬에만 보관
+captures/

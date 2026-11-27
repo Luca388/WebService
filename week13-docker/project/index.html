@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Docker 실습 · 웹서비스설계</title>
+  <style>
+    * { box-sizing:border-box; }
+    body { margin:0; padding:72px 28px; color:#172332; background:#fff; font:16px/1.8 system-ui,-apple-system,"Malgun Gothic",sans-serif; }
+    main { max-width:760px; margin:auto; }
+    .eyebrow { font-size:12px; letter-spacing:.12em; color:#52647b; }
+    h1 { font-size:clamp(28px,5vw,48px); line-height:1.25; font-weight:650; margin:24px 0; }
+    hr { border:0; border-top:1px solid #d9dfe5; margin:36px 0; }
+    dt { color:#52647b; font-size:13px; } dd { margin:0 0 20px; }
+    code { font-family:ui-monospace,monospace; }
+  </style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">WEB SERVICE DESIGN / WEEK 13 / 한국어 분반</p>
+  <!-- 실습 6: 아래 h1의 v1만 v2로 바꾸고 저장하세요. -->
+  <h1>Release v1 is online.</h1>
+  <p>내 HTML 파일이 Docker 이미지에 포함되고, 컨테이너 안의 Nginx가 이 페이지를 제공합니다.</p>
+  <hr>
+  <dl>
+    <dt>지금 비교할 것</dt><dd>주소창의 포트 번호와 이 페이지의 버전 문구를 함께 확인하세요.</dd>
+    <dt>웹 파일 경로</dt><dd><code>/usr/share/nginx/html/index.html</code></dd>
+    <dt>컨테이너 내부 포트</dt><dd><code>80</code> · 호스트 포트는 docker run 명령에서 연결합니다.</dd>
+  </dl>
+</main>
+</body>
+</html>
